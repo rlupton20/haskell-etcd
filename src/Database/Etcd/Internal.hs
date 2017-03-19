@@ -22,6 +22,11 @@ putIO :: String -> String -> B.ByteString -> IO BL.ByteString
 putIO url key value = case parseRequest (url ++ key) of
   Just req -> let newReq = setRequestMethod "PUT" $
                     setRequestBodyURLEncoded [("value", value)] req in
-                putStrLn (show newReq :: String) >>
                 getResponseBody <$> httpLBS newReq
+  Nothing -> pure ""
+
+deleteIO :: String -> String -> IO BL.ByteString
+deleteIO url key = case parseRequest (url ++ key) of
+  Just req -> let newReq = setRequestMethod "DELETE" req in
+    getResponseBody <$> httpLBS newReq
   Nothing -> pure ""

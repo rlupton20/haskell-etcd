@@ -38,7 +38,8 @@ canParsePreviousNodeValue = "Can parse previous node value from a response" ~:
              "\"value\": \"Hello etcd\"}, \"prevNode\": {" `B.append`
              "\"createdIndex\": 2, \"key\": \"/message\"," `B.append`
              "\"value\": \"Hello world\", \"modifiedIndex\": 2}}"
-      expected = Just $ PreviousValue "Hello world" :: Maybe (PreviousValue Text)
+      expected = Just $ PreviousValue "Hello world"
+        :: Maybe (PreviousValue Text)
   in
     expected @=? A.decode json
 

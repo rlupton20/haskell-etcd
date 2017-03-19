@@ -17,9 +17,14 @@ library
   hs-source-dirs:      src
   ghc-options:         -Wall
   exposed-modules:     Lib
+                     , Database.Etcd
   other-modules:       Lib.Prelude
   build-depends:       base >= 4.7 && < 5
                      , protolude >= 0.1.6 && < 0.2
+                     , bytestring
+                     , aeson
+                     , free
+                     , http-conduit
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings, NoImplicitPrelude
 

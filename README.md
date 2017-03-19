@@ -1,3 +1,3 @@
 # haskell-etcd
 
-add description of haskell-etcd here
+A monadic library for interacting with etcd.

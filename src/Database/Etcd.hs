@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Etcd where
 
-import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.String (String)
 import qualified Data.Aeson as A
 import Data.Aeson ((.:))
@@ -26,8 +27,8 @@ render (PrevIndex n) = "prevIndex=" ++ (show n :: [Char])
 render (PrevExist True) = "prevExist=true"
 render (PrevExist False) = "prevExist=false"
 
-data EtcdA a = Get Key (B.ByteString -> a)
-  | Put Key Value (B.ByteString -> a)
+data EtcdA a = Get Key (BL.ByteString -> a)
+  | Put Key Value (BL.ByteString -> a)
 
 instance Functor EtcdA where
   fmap f (Get t g) = Get t (f . g)
@@ -42,8 +43,8 @@ put :: (A.FromJSON a) => Key -> Value -> EtcdM (Maybe a)
 put k v = liftF . fmap (A.decode) $ Put k v identity
 
 runEtcdA :: Etcd -> EtcdA a -> IO a
-runEtcdA e (Get k f) = fmap f . getIO $ (unEtcd e) ++ k
-runEtcdA e (Put k v f) = fmap f $ putIO (unEtcd e ++ k) k v 
+runEtcdA e (Get k f) = fmap f $ getIO (unEtcd e) k
+runEtcdA e (Put k v f) = fmap f $ putIO (unEtcd e) k v 
 
 runEtcd :: Etcd -> EtcdM a -> IO a
 runEtcd e = foldFree (runEtcdA e)

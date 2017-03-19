@@ -12,7 +12,7 @@ test:
     - stack --no-docker test
 
 
-pages:
+docs:
   stage: generate-docs
   script:
   - stack --no-docker setup

@@ -27,7 +27,7 @@ canParseValueFromResponse = "Can obtain the value of a node from response" ~:
   let json = "{\"action\": \"get\", \"node\": { \"createdIndex\": 2," `B.append`
              "\"key\": \"/message\", \"modifiedIndex\": 2," `B.append`
              "\"value\": \"Hello world\" }}"
-      expected = Just $ Value "Hello world" :: Maybe (Value Text)
+      expected = Just $ NodeValue "Hello world" :: Maybe (NodeValue Text)
   in
     expected @=? A.decode json
 
@@ -50,8 +50,8 @@ canExtractPairsOfJSONValues = "Can extract pairs of JSON objects" ~:
              "\"value\": \"Hello etcd\"}, \"prevNode\": {" `B.append`
              "\"createdIndex\": 2, \"key\": \"/message\"," `B.append`
              "\"value\": \"Hello world\", \"modifiedIndex\": 2}}"
-      expected = Just $ Pair (Value "Hello etcd") (PreviousValue "Hello world")
-        :: Maybe (Pair (Value Text) (PreviousValue Text))
+      expected = Just $ Pair (NodeValue "Hello etcd") (PreviousValue "Hello world")
+        :: Maybe (Pair (NodeValue Text) (PreviousValue Text))
   in
     expected @=? A.decode json
   

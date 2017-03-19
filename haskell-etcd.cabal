@@ -26,6 +26,8 @@ library
                      , aeson
                      , free
                      , http-conduit
+                     , data-default
+                     , exceptions
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings, NoImplicitPrelude
 

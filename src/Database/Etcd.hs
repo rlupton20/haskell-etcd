@@ -6,50 +6,75 @@ import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.String (String)
 import qualified Data.Aeson as A
 import Control.Monad.Free (Free, liftF, foldFree)
+import Data.Default (Default(..))
 
 import Database.Etcd.Internal
+import Database.Etcd.JSON
 import Lib.Prelude
+
+
+-- |
+-- = High level API
+-- Basic high level functions for constructing computations
+-- using etcd
 
 type Key = String
 type Value = B.ByteString
-type TTL = Maybe Integer
-type Recursive = Bool
-type Wait = Maybe Integer
 
--- |PrevCond is a set of conditions for atomic compare and swap
-data PrevCond = PrevValue String | PrevIndex Integer | PrevExist Bool
-type PrevValue = Maybe PrevCond
+type EtcdM = Free EtcdA
 
-render :: PrevCond -> String
-render (PrevValue t) = "prevValue=" ++ t
-render (PrevIndex n) = "prevIndex=" ++ (show n :: [Char])
-render (PrevExist True) = "prevExist=true"
-render (PrevExist False) = "prevExist=false"
 
-data EtcdA a = Get Key (BL.ByteString -> a)
+-- |get obtains the value of a key from etcd
+get :: (A.FromJSON a) => Key -> EtcdM (Maybe a)
+get k = fmap unwrap <$> getJ (keys k) def
+  where
+    unwrap :: NodeValue a -> a
+    unwrap (NodeValue x) = x
+
+runEtcd :: Etcd -> EtcdM a -> IO a
+runEtcd e = foldFree (runEtcdA e)
+
+
+-- |
+-- = Low level API
+-- Gives full control on the different types of request that
+-- might be sent to etcd
+
+
+-- |getJ does a get request for a key, using GetOptions to modify
+-- it in various ways. It will extract values according to the type
+-- of FromJSON instance specified/inferred.
+getJ :: (A.FromJSON a) => Key -> GetOptions -> EtcdM (Maybe a)
+getJ k o = liftF . fmap A.decode $ Get k o identity
+
+-- |putJ allows us to put key and value pairs in the etcd store.
+putJ :: (A.FromJSON a) => Key -> Value -> EtcdM (Maybe a)
+putJ k v = liftF . fmap A.decode $ Put k v identity
+
+-- |deleteJ lets us delete a key from etcd
+deleteJ :: (A.FromJSON a) => Key -> EtcdM (Maybe a)
+deleteJ k = liftF . fmap A.decode $ Delete k identity
+
+
+
+-- Internals
+
+-- Algebra for describing interaction with etcd
+data EtcdA a = Get Key GetOptions (BL.ByteString -> a)
   | Put Key Value (BL.ByteString -> a)
   | Delete Key (BL.ByteString -> a)
 
 instance Functor EtcdA where
-  fmap f (Get k g) = Get k (f . g)
+  fmap f (Get k o g) = Get k o (f . g)
   fmap f (Put k v g) = Put k v (f . g)
   fmap f (Delete k g) = Delete k (f . g)
 
-type EtcdM = Free EtcdA
-
-getJ :: (A.FromJSON a) => Key -> EtcdM (Maybe a)
-getJ k = liftF . fmap A.decode $ Get k identity
-
-putJ :: (A.FromJSON a) => Key -> Value -> EtcdM (Maybe a)
-putJ k v = liftF . fmap A.decode $ Put k v identity
-
-deleteJ :: (A.FromJSON a) => Key -> EtcdM (Maybe a)
-deleteJ k = liftF . fmap A.decode $ Delete k identity
-
 runEtcdA :: Etcd -> EtcdA a -> IO a
-runEtcdA e (Get k f) = fmap f $ getIO (unEtcd e) k
+runEtcdA e (Get k o f) = fmap f $ getIO (unEtcd e) k o
 runEtcdA e (Put k v f) = fmap f $ putIO (unEtcd e) k v 
 runEtcdA e (Delete k f) = fmap f $ deleteIO (unEtcd e) k
 
-runEtcd :: Etcd -> EtcdM a -> IO a
-runEtcd e = foldFree (runEtcdA e)
+-- |keys is a helper function to modify URIs to requests
+-- into the keyspace
+keys :: String -> String
+keys = ("v2/keys/"++)

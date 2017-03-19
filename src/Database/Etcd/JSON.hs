@@ -1,6 +1,6 @@
 module Database.Etcd.JSON (
   EtcdVersion(..)
-, Value(..)
+, NodeValue(..)
 , PreviousValue(..)
 , Pair(..)) where
 
@@ -19,10 +19,10 @@ instance A.FromJSON EtcdVersion where
     v .: "etcdcluster"
   parseJSON _ = empty
 
-newtype Value a = Value a deriving (Show, Eq)
+newtype NodeValue a = NodeValue a deriving (Show, Eq)
 
-instance (A.FromJSON a) => A.FromJSON (Value a) where
-  parseJSON (A.Object v) = Value <$> (v .: "node" >>= (.: "value"))
+instance (A.FromJSON a) => A.FromJSON (NodeValue a) where
+  parseJSON (A.Object v) = NodeValue <$> (v .: "node" >>= (.: "value"))
   parseJSON _ = empty
 
 newtype PreviousValue a = PreviousValue a deriving (Eq, Show)
@@ -32,7 +32,7 @@ instance (A.FromJSON a) => A.FromJSON (PreviousValue a) where
     (v .: "prevNode" >>= (.: "value"))
   parseJSON _ = empty
 
-data Pair a b = Pair {-# UNPACK #-} !a {-# UNPACK #-} !b deriving (Eq, Show)
+data Pair a b = Pair !a !b deriving (Eq, Show)
 
 instance (A.FromJSON a, A.FromJSON b) => A.FromJSON (Pair a b) where
   parseJSON o = Pair <$> A.parseJSON o <*> A.parseJSON o

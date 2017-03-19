@@ -18,21 +18,35 @@ import Lib.Prelude
 -- Basic high level functions for constructing computations
 -- using etcd
 
+
+etcd :: String -> Etcd
+etcd = Etcd
+
 type Key = String
 type Value = B.ByteString
-
 type EtcdM = Free EtcdA
 
+runEtcd :: Etcd -> EtcdM a -> IO a
+runEtcd e = foldFree (runEtcdA e)
 
--- |get obtains the value of a key from etcd
+-- | 'get' obtains the value of a key from etcd. Note the
+-- 'FromJSON' instance here is applied to the value which is
+-- returned, not to the entire JSON.
 get :: (A.FromJSON a) => Key -> EtcdM (Maybe a)
 get k = fmap unwrap <$> getJ (keys k) def
   where
     unwrap :: NodeValue a -> a
     unwrap (NodeValue x) = x
 
-runEtcd :: Etcd -> EtcdM a -> IO a
-runEtcd e = foldFree (runEtcdA e)
+
+-- | 'waitFromIndex' returns the value of a node when an event happens
+-- at or past the index provided.
+waitFromIndex :: (A.FromJSON a) => Key -> Integer -> EtcdM (Maybe a)
+waitFromIndex k i = fmap unwrap <$> getJ (keys k)
+                    (def { waitChange = WaitIndex i })
+  where
+    unwrap :: NodeValue a -> a
+    unwrap (NodeValue x) = x
 
 
 -- |
@@ -41,17 +55,17 @@ runEtcd e = foldFree (runEtcdA e)
 -- might be sent to etcd
 
 
--- |getJ does a get request for a key, using GetOptions to modify
--- it in various ways. It will extract values according to the type
--- of FromJSON instance specified/inferred.
+-- | 'getJ' does a get request for a key, using 'GetOptions' to modify
+-- it in various ways. It will extract parts of the returned JSON
+-- according to the type of 'FromJSON' instance specified/inferred.
 getJ :: (A.FromJSON a) => Key -> GetOptions -> EtcdM (Maybe a)
 getJ k o = liftF . fmap A.decode $ Get k o identity
 
--- |putJ allows us to put key and value pairs in the etcd store.
+-- | 'putJ' allows us to put key and value pairs in the etcd store.
 putJ :: (A.FromJSON a) => Key -> Value -> EtcdM (Maybe a)
 putJ k v = liftF . fmap A.decode $ Put k v identity
 
--- |deleteJ lets us delete a key from etcd
+-- | 'deleteJ' lets us delete a key from etcd
 deleteJ :: (A.FromJSON a) => Key -> EtcdM (Maybe a)
 deleteJ k = liftF . fmap A.decode $ Delete k identity
 

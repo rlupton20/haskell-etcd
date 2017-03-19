@@ -14,10 +14,6 @@ import Lib.Prelude
 
 newtype Etcd = Etcd { unEtcd :: String }
 
-etcd :: String -> Etcd
-etcd = Etcd
-
-
 -- Various options to control the different requests
 data Wait = No | WaitIndex Integer | Wait deriving (Eq, Show)
 

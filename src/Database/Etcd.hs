@@ -5,7 +5,6 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.String (String)
 import qualified Data.Aeson as A
-import Data.Aeson ((.:))
 import Control.Monad.Free (Free, liftF, foldFree)
 
 import Database.Etcd.Internal
@@ -36,11 +35,11 @@ instance Functor EtcdA where
 
 type EtcdM = Free EtcdA
 
-get :: (A.FromJSON a) => Key -> EtcdM (Maybe a)
-get k = liftF . fmap (A.decode) $ Get k identity
+getJ :: (A.FromJSON a) => Key -> EtcdM (Maybe a)
+getJ k = liftF . fmap (A.decode) $ Get k identity
 
-put :: (A.FromJSON a) => Key -> Value -> EtcdM (Maybe a)
-put k v = liftF . fmap (A.decode) $ Put k v identity
+putJ :: (A.FromJSON a) => Key -> Value -> EtcdM (Maybe a)
+putJ k v = liftF . fmap (A.decode) $ Put k v identity
 
 runEtcdA :: Etcd -> EtcdA a -> IO a
 runEtcdA e (Get k f) = fmap f $ getIO (unEtcd e) k
@@ -48,9 +47,3 @@ runEtcdA e (Put k v f) = fmap f $ putIO (unEtcd e) k v
 
 runEtcd :: Etcd -> EtcdM a -> IO a
 runEtcd e = foldFree (runEtcdA e)
-
-data EtcdVersion = EtcdVersion Text Text deriving (Show)
-
-instance A.FromJSON EtcdVersion where
-  parseJSON (A.Object v) = EtcdVersion <$> v .: "etcdserver" <*> v .: "etcdcluster"
-  parseJSON _ = empty

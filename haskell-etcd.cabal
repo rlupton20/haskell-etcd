@@ -16,12 +16,13 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   ghc-options:         -Wall
-  exposed-modules:     Lib
-                     , Database.Etcd
+  exposed-modules:     Database.Etcd
+                     , Database.Etcd.JSON
   other-modules:       Lib.Prelude
   build-depends:       base >= 4.7 && < 5
                      , protolude >= 0.1.6 && < 0.2
                      , bytestring
+                     , text
                      , aeson
                      , free
                      , http-conduit

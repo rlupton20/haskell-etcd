@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds #-}
 import Test.Framework as TF
 import Test.Framework.Providers.HUnit (hUnitTestToTests)
 import Test.HUnit as HU
@@ -63,7 +64,7 @@ canParseEventSetOfNode = "Can detect set action and parse information" ~:
              "\"modifiedIndex\":6,\"createdIndex\":6}," `B.append`
              "\"prevNode\":{\"key\":\"/test\"," `B.append`
              "\"value\":\"11\",\"modifiedIndex\":5,\"createdIndex\":5}}"
-      expected = Just . ActionSet $ Pair (NodeValue "10") (PreviousValue "11")
-        :: Maybe (ActionSet (Pair (NodeValue Text) (PreviousValue Text)))
+      expected = Just . Action $ Pair (NodeValue "10") (PreviousValue "11")
+        :: Maybe (Action "set" (Pair (NodeValue Text) (PreviousValue Text)))
   in
     expected @=? A.decode json

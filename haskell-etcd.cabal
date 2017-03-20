@@ -28,6 +28,7 @@ library
                      , http-conduit
                      , data-default
                      , exceptions
+                     , singletons
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings, NoImplicitPrelude
 

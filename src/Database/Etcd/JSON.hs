@@ -1,13 +1,16 @@
+{-# LANGUAGE DataKinds, GADTs, KindSignatures #-}
 module Database.Etcd.JSON (
   EtcdVersion(..)
 , NodeValue(..)
 , PreviousValue(..)
 , Pair(..)
-, ActionSet(..)) where
+, Action(..)) where
 
 import Data.Text (Text)
 import qualified Data.Aeson as A
 import Data.Aeson ((.:))
+import Data.Aeson.Types (Parser)
+import Data.Singletons.TypeLits (Symbol, KnownSymbol, symbolVal)
 
 import Lib.Prelude
 
@@ -43,12 +46,18 @@ instance (A.FromJSON a, A.FromJSON b) => A.FromJSON (Pair a b) where
   parseJSON o = Pair <$> A.parseJSON o <*> A.parseJSON o
 
 
-newtype ActionSet a = ActionSet a deriving (Eq, Show)
+data Action :: Symbol -> * -> * where
+  Action :: a -> Action s a
+  deriving (Eq, Show)
 
-instance (A.FromJSON a) => A.FromJSON (ActionSet a) where
-  parseJSON o@(A.Object v) = v .: "action" >>= \a ->
-    if a == ("set" :: Text) then
-      (ActionSet <$> A.parseJSON o)
-    else
-      empty
-  parseJSON _ = empty
+instance (A.FromJSON a, KnownSymbol s) => A.FromJSON (Action s a) where
+  parseJSON o = proxyParse Proxy o
+    where
+      proxyParse :: (A.FromJSON a, KnownSymbol s) =>
+        Proxy s -> A.Value -> Parser (Action s a)
+      proxyParse p (A.Object v) = v .: "action" >>= \a ->
+        if a == symbolVal p then
+          (Action <$> A.parseJSON o)
+        else
+          empty
+      proxyParse _ _ = empty

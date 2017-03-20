@@ -20,7 +20,8 @@ jsonParserTests :: TF.Test
 jsonParserTests = testGroup "JSON parser tests" . hUnitTestToTests $
   HU.TestList [ canParseValueFromResponse
               , canParsePreviousNodeValue
-              , canExtractPairsOfJSONValues ]
+              , canExtractPairsOfJSONValues
+              , canParseEventSetOfNode ]
 
 canParseValueFromResponse :: HU.Test
 canParseValueFromResponse = "Can obtain the value of a node from response" ~:
@@ -55,3 +56,14 @@ canExtractPairsOfJSONValues = "Can extract pairs of JSON objects" ~:
   in
     expected @=? A.decode json
   
+canParseEventSetOfNode :: HU.Test
+canParseEventSetOfNode = "Can detect set action and parse information" ~:
+  let json = "{\"action\":\"set\",\"node\":{" `B.append`
+             "\"key\":\"/test\",\"value\":\"10\"," `B.append`
+             "\"modifiedIndex\":6,\"createdIndex\":6}," `B.append`
+             "\"prevNode\":{\"key\":\"/test\"," `B.append`
+             "\"value\":\"11\",\"modifiedIndex\":5,\"createdIndex\":5}}"
+      expected = Just . ActionSet $ Pair (NodeValue "10") (PreviousValue "11")
+        :: Maybe (ActionSet (Pair (NodeValue Text) (PreviousValue Text)))
+  in
+    expected @=? A.decode json

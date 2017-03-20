@@ -21,10 +21,12 @@ data Wait = No | WaitIndex Integer | Wait deriving (Eq, Show)
 data PrevCond = PrevValue String | PrevIndex Integer | PrevExist Bool
 type PrevValue = Maybe PrevCond
 
-data GetOptions = GetOptions { waitChange :: Wait } deriving (Eq, Show) 
+data GetOptions = GetOptions { waitChange :: Wait
+                             , recursive :: Bool } deriving (Eq, Show) 
 
 instance Default GetOptions where
-  def = GetOptions No
+  def = GetOptions { waitChange = No
+                   , recursive = False }
 
 buildGetRequest :: (MonadThrow m) => String -> String -> GetOptions -> m Request
 buildGetRequest url key o = parseRequest $ url ++ key ++
@@ -32,13 +34,18 @@ buildGetRequest url key o = parseRequest $ url ++ key ++
                             queries o
   where
     queries :: GetOptions -> String
-    queries = waits
+    queries = waits >>= recurse
 
     waits :: GetOptions -> String
     waits o = case waitChange o of
       No -> ""
       WaitIndex n -> "wait=true&waitIndex=" ++ show n
       Wait -> "wait=true"
+
+    recurse :: String -> GetOptions -> String
+    recurse q o = case recursive o of
+      False -> q
+      True -> if null q then "recursive=true" else "&recursive=true"
 
 
 getIO :: String -> String -> GetOptions -> IO BL.ByteString

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds #-}
 module Database.Etcd where
 
 import qualified Data.ByteString.Char8 as B
@@ -7,6 +8,7 @@ import Data.String (String)
 import qualified Data.Aeson as A
 import Control.Monad.Free (Free, liftF, foldFree)
 import Data.Default (Default(..))
+import Data.Singletons.TypeLits (KnownSymbol)
 
 import Database.Etcd.Internal
 import Database.Etcd.JSON
@@ -43,10 +45,27 @@ get k = fmap unwrap <$> getJ (keys k) def
 -- at or past the index provided.
 waitFromIndex :: (A.FromJSON a) => Key -> Integer -> EtcdM (Maybe a)
 waitFromIndex k i = fmap unwrap <$> getJ (keys k)
-                    (def { waitChange = WaitIndex i })
+                    def { waitChange = WaitIndex i }
   where
     unwrap :: NodeValue a -> a
     unwrap (NodeValue x) = x
+
+
+-- | 'waitForActionFromIndex' provides a dependently typed interface
+-- for waiting for actions to happen on keys after a certain index
+waitForActionFromIndex :: (A.FromJSON a, KnownSymbol s) =>
+  Proxy s -> Key -> Integer -> EtcdM (Maybe a)
+waitForActionFromIndex p k i = fmap (unwrap p) <$> getJ (keys k)
+                               def { waitChange = WaitIndex i }
+  where
+    unwrap :: Proxy s -> Action s (NodeValue a) -> a
+    unwrap _ (Action (NodeValue x)) = x
+
+
+-- | 'waitForSetFromIndex' Waits for a set of the provided
+-- key from the given index
+waitForSetFromIndex :: (A.FromJSON a) => Key -> Integer -> EtcdM (Maybe a)
+waitForSetFromIndex k i = waitForActionFromIndex (Proxy :: Proxy "set") k i
 
 
 -- |

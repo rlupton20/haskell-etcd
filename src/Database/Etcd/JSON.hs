@@ -4,7 +4,9 @@ module Database.Etcd.JSON (
 , NodeValue(..)
 , PreviousValue(..)
 , Pair(..)
-, Action(..)) where
+, Action(..)
+, JSBranch
+, unwrap) where
 
 import Data.Text (Text)
 import qualified Data.Aeson as A
@@ -13,6 +15,8 @@ import Data.Aeson.Types (Parser)
 import Data.Singletons.TypeLits (Symbol, KnownSymbol, symbolVal)
 
 import Lib.Prelude
+
+import Database.Etcd.GenericJSON
 
 
 data EtcdVersion = EtcdVersion { serverVersion :: Text

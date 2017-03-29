@@ -19,6 +19,7 @@ library
   exposed-modules:     Database.Etcd
                      , Database.Etcd.JSON
   other-modules:       Lib.Prelude
+                     , Database.Etcd.GenericJSON
   build-depends:       base >= 4.7 && < 5
                      , protolude >= 0.1.6 && < 0.2
                      , bytestring

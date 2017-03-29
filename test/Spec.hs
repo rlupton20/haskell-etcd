@@ -24,7 +24,8 @@ jsonParserTests = testGroup "\nJSON parser tests" . hUnitTestToTests $
               , canExtractPairsOfJSONValues
               , canParseEventSetOfNode
               , canDistinguishSetFromDelete
-              , canParseEventDeleteOfNode ]
+              , canParseEventDeleteOfNode
+              , testJSBranch ]
 
 canParseValueFromResponse :: HU.Test
 canParseValueFromResponse = "Can obtain the value of a node from response" ~:
@@ -96,3 +97,11 @@ canParseEventDeleteOfNode = "Can detect delete action and parse information" ~:
         :: Maybe (Action "delete" (PreviousValue Text))
   in
     expected @=? A.decode json
+
+testJSBranch :: HU.Test
+testJSBranch = "Test JSBranch on simple type" ~:
+  let json ="{\"key1\":{\"key2\":{\"key3\":\"Hello inner json\"}}}"
+      expected = Just "Hello inner json"
+      decoded = A.decode json :: Maybe (JSBranch ["key1", "key2", "key3"] Text)
+  in
+    expected @=? fmap unwrap decoded

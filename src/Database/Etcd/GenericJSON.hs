@@ -21,10 +21,10 @@ data JSBranch :: [Symbol] -> * -> * where
   JSCons :: JSBranch xs a -> JSBranch (t ': xs) a
 
 
-unwrap :: JSBranch ixs a -> a
-unwrap jsb = case jsb of
+unwrap :: JSBranch xs a -> a
+unwrap b = case b of
   JSNil x -> x
-  JSCons jsb' -> unwrap jsb'
+  JSCons b' -> unwrap b'
 
 
 instance (A.FromJSON a, SingI xs) => A.FromJSON (JSBranch xs a) where
@@ -44,4 +44,4 @@ reflectSym :: SSymbol s -> String
 reflectSym s = withKnownSymbol s $ proxySym s Proxy
   where
     proxySym :: (KnownSymbol n) => SSymbol n -> Proxy n -> String
-    proxySym _ p = symbolVal p
+    proxySym _ = symbolVal

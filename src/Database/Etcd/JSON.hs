@@ -1,16 +1,10 @@
 {-# LANGUAGE DataKinds, GADTs, KindSignatures #-}
-{-# LANGUAGE ExplicitNamespaces #-}
 module Database.Etcd.JSON (
   EtcdVersion(..)
 , NodeValue(..)
 , PreviousValue(..)
 , Pair(..)
-, Action(..)
-, JSBranch
-, unwrap
-, type(|>|)
-, List
-, Parse ) where
+, Action(..)) where
 
 import Data.Text (Text)
 import qualified Data.Aeson as A
@@ -19,8 +13,6 @@ import Data.Aeson.Types (Parser)
 import Data.Singletons.TypeLits (Symbol, KnownSymbol, symbolVal)
 
 import Lib.Prelude
-
-import Database.Etcd.GenericJSON
 
 
 data EtcdVersion = EtcdVersion { serverVersion :: Text

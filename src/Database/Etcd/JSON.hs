@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds, GADTs, KindSignatures #-}
+{-# LANGUAGE ExplicitNamespaces #-}
 module Database.Etcd.JSON (
   EtcdVersion(..)
 , NodeValue(..)
@@ -6,7 +7,10 @@ module Database.Etcd.JSON (
 , Pair(..)
 , Action(..)
 , JSBranch
-, unwrap) where
+, unwrap
+, type(|>|)
+, List
+, Parse ) where
 
 import Data.Text (Text)
 import qualified Data.Aeson as A

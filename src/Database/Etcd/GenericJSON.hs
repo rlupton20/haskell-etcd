@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds, GADTs, KindSignatures, TypeOperators #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 module Database.Etcd.GenericJSON where
 
@@ -45,3 +46,17 @@ reflectSym s = withKnownSymbol s $ proxySym s Proxy
   where
     proxySym :: (KnownSymbol n) => SSymbol n -> Proxy n -> String
     proxySym _ = symbolVal
+
+
+--------------------------------------------------------------------------------
+-- Nicer type level API using a type family to mirror JSON structure
+--------------------------------------------------------------------------------
+
+type Parse a = JSBranch '[] a
+
+type family (x :: Symbol) |>| (b :: *) :: *
+type instance (x :: Symbol) |>| JSBranch xs a = JSBranch (x ': xs) a
+
+type family List (x :: *) :: *
+type instance List (JSBranch xs a) = Parse [JSBranch xs a]
+

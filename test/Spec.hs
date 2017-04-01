@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeOperators #-}
 import Test.Framework as TF
 import Test.Framework.Providers.HUnit (hUnitTestToTests)
 import Test.HUnit as HU
@@ -31,7 +32,8 @@ genericJSONParserTests :: TF.Test
 genericJSONParserTests = testGroup "Generic JSON Parser tests" . hUnitTestToTests $
   HU.TestList [ canExtractTextInJSBranch
               , canExtractIntegerInJSBranch
-              , canExtractListInJSBranch ]
+              , canExtractListInJSBranch
+              , canExtractListInJSBranchWithTypeFamily ]
 
 
 
@@ -137,5 +139,14 @@ canExtractListInJSBranch = "Can extract JSBranch on List" ~:
   let json = "{\"key1\":[{\"key2\":41},{\"key2\":42}]}"
       expected = Just [41,42]
       decoded = A.decode json :: Maybe (JSBranch '["key1"] [JSBranch '["key2"] Integer])
+  in
+    expected @=? (fmap (fmap unwrap) . (fmap unwrap) $ decoded)
+
+
+canExtractListInJSBranchWithTypeFamily :: HU.Test
+canExtractListInJSBranchWithTypeFamily = "Can extract JSBranch on List with type family" ~:
+  let json = "{\"key1\":[{\"key2\":41},{\"key2\":42}]}"
+      expected = Just [41,42]
+      decoded = A.decode json :: Maybe ("key1" |>| List ("key2" |>| Parse Integer))
   in
     expected @=? (fmap (fmap unwrap) . (fmap unwrap) $ decoded)

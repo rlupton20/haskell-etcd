@@ -1,25 +1,38 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DataKinds #-}
-module Database.Etcd where
+module Database.Etcd
+(
+  -- * Basic types
+    Etcd
+  , etcd
+  , EtcdM
+  , runEtcd
+  , Key
+  -- * High level API
+  , get
+  , waitFromIndex
+  , watchDirectoryFromIndex
+  -- * Low level API
+  , getJ
+  , putJ
+  , deleteJ ) where
 
+import           Control.Monad.Free (Free, liftF, foldFree)
+import qualified Data.Aeson as A
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
-import Data.String (String)
-import qualified Data.Aeson as A
-import Control.Monad.Free (Free, liftF, foldFree)
-import Data.Default (Default(..))
-import Data.Singletons.TypeLits (KnownSymbol)
+import           Data.Default (Default(..))
+import           Data.Singletons.TypeLits (KnownSymbol)
+import           Data.String (String)
 
-import Database.Etcd.Internal
-import Database.Etcd.JSON
-import Lib.Prelude
+import           Database.Etcd.Internal
+import           Database.Etcd.JSON
+import           Lib.Prelude hiding (get)
 
 
--- |
--- = High level API
--- Basic high level functions for constructing computations
--- using etcd
-
+--------------------------------------------------------------------------------
+-- Basic types and utilities
+--------------------------------------------------------------------------------
 
 etcd :: String -> Etcd
 etcd = Etcd
@@ -30,6 +43,11 @@ type EtcdM = Free EtcdA
 
 runEtcd :: Etcd -> EtcdM a -> IO a
 runEtcd e = foldFree (runEtcdA e)
+
+
+--------------------------------------------------------------------------------
+-- Basic high level interface
+--------------------------------------------------------------------------------
 
 -- | 'get' obtains the value of a key from etcd. Note the
 -- 'FromJSON' instance here is applied to the value which is
@@ -51,6 +69,17 @@ waitFromIndex k i = fmap unwrap <$> getJ (keys k)
     unwrap (NodeValue x) = x
 
 
+watchDirectoryFromIndex :: (A.FromJSON a) => Key -> Integer -> EtcdM (Maybe a)
+watchDirectoryFromIndex dir i = getJ (keys dir)
+                                def { waitChange = WaitIndex i
+                                    , recursive = True }
+
+
+--------------------------------------------------------------------------------
+-- Dependently typed interfaces
+--------------------------------------------------------------------------------
+
+
 -- | 'waitForActionFromIndex' provides a dependently typed interface
 -- for waiting for actions to happen on keys after a certain index
 waitForActionFromIndex :: (A.FromJSON a, KnownSymbol s) =>
@@ -68,11 +97,9 @@ waitForSetFromIndex :: (A.FromJSON a) => Key -> Integer -> EtcdM (Maybe a)
 waitForSetFromIndex k i = waitForActionFromIndex (Proxy :: Proxy "set") k i
 
 
--- |
--- = Low level API
--- Gives full control on the different types of request that
--- might be sent to etcd
-
+--------------------------------------------------------------------------------
+-- Low level API
+--------------------------------------------------------------------------------
 
 -- | 'getJ' does a get request for a key, using 'GetOptions' to modify
 -- it in various ways. It will extract parts of the returned JSON
@@ -90,7 +117,9 @@ deleteJ k = liftF . fmap A.decode $ Delete k identity
 
 
 
+--------------------------------------------------------------------------------
 -- Internals
+--------------------------------------------------------------------------------
 
 -- Algebra for describing interaction with etcd
 data EtcdA a = Get Key GetOptions (BL.ByteString -> a)
@@ -104,7 +133,7 @@ instance Functor EtcdA where
 
 runEtcdA :: Etcd -> EtcdA a -> IO a
 runEtcdA e (Get k o f) = fmap f $ getIO (unEtcd e) k o
-runEtcdA e (Put k v f) = fmap f $ putIO (unEtcd e) k v 
+runEtcdA e (Put k v f) = fmap f $ putIO (unEtcd e) k v
 runEtcdA e (Delete k f) = fmap f $ deleteIO (unEtcd e) k
 
 -- |keys is a helper function to modify URIs to requests

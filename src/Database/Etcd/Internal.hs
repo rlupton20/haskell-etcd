@@ -22,7 +22,7 @@ data PrevCond = PrevValue String | PrevIndex Integer | PrevExist Bool
 type PrevValue = Maybe PrevCond
 
 data GetOptions = GetOptions { waitChange :: Wait
-                             , recursive :: Bool } deriving (Eq, Show) 
+                             , recursive :: Bool } deriving (Eq, Show)
 
 instance Default GetOptions where
   def = GetOptions { waitChange = No
@@ -45,7 +45,7 @@ buildGetRequest url key o = parseRequest $ url ++ key ++
     recurse :: String -> GetOptions -> String
     recurse q o = case recursive o of
       False -> q
-      True -> if null q then "recursive=true" else "&recursive=true"
+      True -> if null q then "recursive=true" else q ++ "&recursive=true"
 
 
 getIO :: String -> String -> GetOptions -> IO BL.ByteString

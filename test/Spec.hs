@@ -65,7 +65,7 @@ canExtractPairsOfJSONValues = "Can extract pairs of JSON objects" ~:
         :: Maybe (Pair (NodeValue Text) (PreviousValue Text))
   in
     expected @=? A.decode json
-  
+
 
 canParseEventSetOfNode :: HU.Test
 canParseEventSetOfNode = "Can detect set action and parse information" ~:

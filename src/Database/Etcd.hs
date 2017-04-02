@@ -10,6 +10,7 @@ module Database.Etcd
   , Key
   -- * High level API
   , get
+  , getDirectory
   , waitFromIndex
   , watchDirectoryFromIndex
   -- * Low level API
@@ -57,6 +58,12 @@ get k = fmap unwrap <$> getJ (keys k) def
   where
     unwrap :: NodeValue a -> a
     unwrap (NodeValue x) = x
+
+-- | 'getDirectory' returns the contents of a directory. The entire JSON
+-- response is returned here, so provide a suitable FromJSON instance.
+getDirectory :: (A.FromJSON a) => Key -> EtcdM (Maybe a)
+getDirectory dir = getJ (keys dir)
+                   def { recursive = True }
 
 
 -- | 'waitFromIndex' returns the value of a node when an event happens

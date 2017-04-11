@@ -25,7 +25,8 @@ jsonParserTests = testGroup "\nJSON parser tests" . hUnitTestToTests $
               , canExtractPairsOfJSONValues
               , canParseEventSetOfNode
               , canDistinguishSetFromDelete
-              , canParseEventDeleteOfNode ]
+              , canParseEventDeleteOfNode
+              , canParseModifiedIndexOfNode ]
 
 
 
@@ -51,6 +52,17 @@ canParsePreviousNodeValue = "Can parse previous node value from a response" ~:
              "\"value\": \"Hello world\", \"modifiedIndex\": 2}}"
       expected = Just $ PreviousValue "Hello world"
         :: Maybe (PreviousValue Text)
+  in
+    expected @=? A.decode json
+
+canParseModifiedIndexOfNode :: HU.Test
+canParseModifiedIndexOfNode = "Can parse the modified index of a node" ~:
+  let json = "{\"action\": \"set\", \"node\": { \"createdIndex\": 3," `B.append`
+             "\"key\": \"/message\", \"modifiedIndex\": 3," `B.append`
+             "\"value\": \"Hello etcd\"}, \"prevNode\": {" `B.append`
+             "\"createdIndex\": 2, \"key\": \"/message\"," `B.append`
+             "\"value\": \"Hello world\", \"modifiedIndex\": 2}}"
+      expected = Just $ ModifiedIndex 3 :: Maybe ModifiedIndex
   in
     expected @=? A.decode json
 

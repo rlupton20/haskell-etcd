@@ -3,6 +3,7 @@ module Database.Etcd.JSON (
   EtcdVersion(..)
 , NodeValue(..)
 , PreviousValue(..)
+, ModifiedIndex(..)
 , Pair(..)
 , Action(..)) where
 
@@ -37,6 +38,14 @@ newtype PreviousValue a = PreviousValue a deriving (Eq, Show)
 instance (A.FromJSON a) => A.FromJSON (PreviousValue a) where
   parseJSON (A.Object v) = PreviousValue <$>
     (v .: "prevNode" >>= (.: "value"))
+  parseJSON _ = empty
+
+
+newtype ModifiedIndex = ModifiedIndex Integer deriving (Eq, Show)
+
+instance A.FromJSON ModifiedIndex where
+  parseJSON (A.Object v) = ModifiedIndex <$>
+    (v .: "node" >>= (.: "modifiedIndex"))
   parseJSON _ = empty
 
 
